@@ -9,6 +9,54 @@ function toDatetimeLocal(val) {
   return new Date(val).toISOString().slice(0, 16);
 }
 
+// Defined at module scope so React never unmounts/remounts it on parent re-renders.
+// If it were defined inside EventModal, every keystroke would recreate the component
+// reference, causing inputs to lose focus.
+function EventForm({ form, onChange, onSubmit, error, loading, submitLabel, onCancel }) {
+  return (
+    <form onSubmit={onSubmit} className="event-form">
+      {error && <div className="error-msg">{error}</div>}
+      <input
+        placeholder="Event title *"
+        value={form.title}
+        onChange={e => onChange({ ...form, title: e.target.value })}
+        required
+        autoFocus
+      />
+      <textarea
+        placeholder="Description (optional)"
+        value={form.description}
+        onChange={e => onChange({ ...form, description: e.target.value })}
+        rows={3}
+      />
+      <input
+        type="datetime-local"
+        value={form.event_date}
+        onChange={e => onChange({ ...form, event_date: e.target.value })}
+        required
+      />
+      <select
+        value={form.category}
+        onChange={e => onChange({ ...form, category: e.target.value })}
+      >
+        {CATEGORIES.map(c => (
+          <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+        ))}
+      </select>
+      <div className="form-actions">
+        <button type="submit" className="btn btn-primary" disabled={loading}>
+          {loading ? 'Saving...' : submitLabel}
+        </button>
+        {onCancel && (
+          <button type="button" className="btn btn-outline" onClick={onCancel}>
+            Cancel
+          </button>
+        )}
+      </div>
+    </form>
+  );
+}
+
 export default function EventModal({ event, position, token, user, onClose, onCreated, onUpdated, onDeleted }) {
   const isNew = !event;
   const [mode, setMode] = useState(isNew ? 'create' : 'view');
@@ -106,48 +154,6 @@ export default function EventModal({ event, position, token, user, onClose, onCr
 
   const isOwner = event && user && event.creator_id === user.id;
 
-  const EventForm = ({ onSubmit, submitLabel }) => (
-    <form onSubmit={onSubmit} className="event-form">
-      {error && <div className="error-msg">{error}</div>}
-      <input
-        placeholder="Event title *"
-        value={form.title}
-        onChange={e => setForm({ ...form, title: e.target.value })}
-        required
-      />
-      <textarea
-        placeholder="Description (optional)"
-        value={form.description}
-        onChange={e => setForm({ ...form, description: e.target.value })}
-        rows={3}
-      />
-      <input
-        type="datetime-local"
-        value={form.event_date}
-        onChange={e => setForm({ ...form, event_date: e.target.value })}
-        required
-      />
-      <select
-        value={form.category}
-        onChange={e => setForm({ ...form, category: e.target.value })}
-      >
-        {CATEGORIES.map(c => (
-          <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-        ))}
-      </select>
-      <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Saving...' : submitLabel}
-        </button>
-        {mode === 'edit' && (
-          <button type="button" className="btn btn-outline" onClick={() => setMode('view')}>
-            Cancel
-          </button>
-        )}
-      </div>
-    </form>
-  );
-
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal" onClick={e => e.stopPropagation()}>
@@ -159,7 +165,14 @@ export default function EventModal({ event, position, token, user, onClose, onCr
             <p className="location-hint">
               {position.lat.toFixed(5)}, {position.lng.toFixed(5)}
             </p>
-            <EventForm onSubmit={handleCreate} submitLabel="Create Event" />
+            <EventForm
+              form={form}
+              onChange={setForm}
+              onSubmit={handleCreate}
+              error={error}
+              loading={loading}
+              submitLabel="Create Event"
+            />
           </>
         )}
 
@@ -238,7 +251,15 @@ export default function EventModal({ event, position, token, user, onClose, onCr
         {mode === 'edit' && event && (
           <>
             <h2>Edit Event</h2>
-            <EventForm onSubmit={handleUpdate} submitLabel="Save Changes" />
+            <EventForm
+              form={form}
+              onChange={setForm}
+              onSubmit={handleUpdate}
+              error={error}
+              loading={loading}
+              submitLabel="Save Changes"
+              onCancel={() => setMode('view')}
+            />
           </>
         )}
       </div>

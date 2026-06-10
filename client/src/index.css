@@ -583,6 +583,61 @@ body {
   50% { opacity: 0.35; }
 }
 
+/* ── Custom map marker pin ───────────────── */
+.em-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* drop-shadow renders the full pin shape including the tail as one shadow */
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.38));
+}
+
+.em-bubble {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #6366f1 0%, #4338ca 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2.5px solid #fff;
+  /* small glare highlight at top-left to give a 3-D look */
+  position: relative;
+}
+
+.em-bubble::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.32);
+  top: 5px;
+  left: 5px;
+}
+
+.em-tail {
+  width: 0;
+  height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 11px solid #4338ca;
+  margin-top: -2px;
+}
+
+/* highlighted state — amber */
+.em-marker--highlight .em-bubble {
+  background: linear-gradient(145deg, #fbbf24 0%, #d97706 100%);
+}
+
+.em-marker--highlight .em-tail {
+  border-top-color: #d97706;
+}
+
 /* ── Toast notification ──────────────────── */
 .toast {
   position: fixed;
@@ -603,6 +658,16 @@ body {
 @keyframes slideUp {
   from { opacity: 0; transform: translateX(-50%) translateY(10px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.ai-match-badge {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .ai-response {

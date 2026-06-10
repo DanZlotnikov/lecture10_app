@@ -7,6 +7,9 @@ import { useAuth } from '../context/AuthContext';
 import EventModal from '../components/EventModal';
 import AIHelper from '../components/AIHelper';
 
+// In production VITE_API_URL points to the Render backend; empty string in dev (Vite proxy handles it)
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 // Fix Leaflet's broken default icon paths under Vite
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -15,11 +18,22 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
+function createEventIcon(id, highlighted = false) {
+  return L.divIcon({
+    className: '',
+    html: `<div class="em-marker${highlighted ? ' em-marker--highlight' : ''}">
+             <div class="em-bubble">${id}</div>
+             <div class="em-tail"></div>
+           </div>`,
+    iconSize: [34, 43],   // bubble(34) + tail(9 net)
+    iconAnchor: [17, 43], // bottom-center of the tail tip
+    popupAnchor: [0, -46],
+  });
+}
+
 function MapClickHandler({ onMapClick }) {
   useMapEvents({
-    click(e) {
-      onMapClick(e.latlng);
-    },
+    click(e) { onMapClick(e.latlng); },
   });
   return null;
 }
@@ -30,6 +44,7 @@ export default function MapPage() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [newEventPos, setNewEventPos] = useState(null);
   const [showAI, setShowAI] = useState(false);
+  const [highlightedIds, setHighlightedIds] = useState([]);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
 
@@ -41,7 +56,7 @@ export default function MapPage() {
 
   const fetchEvents = async () => {
     try {
-      const { data } = await axios.get('/api/events');
+      const { data } = await axios.get(`${API_URL}/api/events`);
       setEvents(data);
     } catch (err) {
       console.error('Failed to fetch events', err);
@@ -52,12 +67,13 @@ export default function MapPage() {
     fetchEvents();
   }, []);
 
-  // Real-time: listen for new events added by other users
+  // Real-time: receive new events broadcast by other users
   useEffect(() => {
-    const socket = io('/', token ? { auth: { token } } : {});
+    const socketUrl = API_URL || '/';
+    const socket = io(socketUrl, token ? { auth: { token } } : {});
     socket.on('new_event', (event) => {
       setEvents(prev => prev.find(e => e.id === event.id) ? prev : [...prev, event]);
-      showToast(`New event added: "${event.title}"`);
+      showToast(`New event: "${event.title}"`);
     });
     return () => socket.disconnect();
   }, [token]);
@@ -78,10 +94,15 @@ export default function MapPage() {
     setNewEventPos(null);
   };
 
+  const handleAIClose = () => {
+    setHighlightedIds([]);
+    setShowAI(false);
+  };
+
   return (
     <div className="map-page">
       <div className="map-controls">
-        <button className="btn btn-primary" onClick={() => setShowAI(!showAI)}>
+        <button className="btn btn-primary" onClick={() => showAI ? handleAIClose() : setShowAI(true)}>
           {showAI ? 'Close AI Helper' : 'AI Event Finder'}
         </button>
         {token
@@ -90,7 +111,12 @@ export default function MapPage() {
         }
       </div>
 
-      {showAI && <AIHelper onClose={() => setShowAI(false)} />}
+      {showAI && (
+        <AIHelper
+          onClose={handleAIClose}
+          onHighlight={setHighlightedIds}
+        />
+      )}
 
       {toast && <div className="toast">{toast}</div>}
 
@@ -105,19 +131,24 @@ export default function MapPage() {
         />
         <MapClickHandler onMapClick={handleMapClick} />
 
-        {events.map(event => (
-          <Marker
-            key={event.id}
-            position={[parseFloat(event.lat), parseFloat(event.lng)]}
-            eventHandlers={{ click: () => handleMarkerClick(event) }}
-          >
-            <Popup>
-              <strong>{event.title}</strong>
-              <br />
-              <small>{event.category} · {new Date(event.event_date).toLocaleDateString()}</small>
-            </Popup>
-          </Marker>
-        ))}
+        {events.map(event => {
+          const highlighted = highlightedIds.includes(event.id);
+          return (
+            <Marker
+              key={event.id}
+              position={[parseFloat(event.lat), parseFloat(event.lng)]}
+              icon={createEventIcon(event.id, highlighted)}
+              zIndexOffset={highlighted ? 1000 : 0}
+              eventHandlers={{ click: () => handleMarkerClick(event) }}
+            >
+              <Popup>
+                <strong>{event.title}</strong>
+                <br />
+                <small>{event.category} · {new Date(event.event_date).toLocaleDateString()}</small>
+              </Popup>
+            </Marker>
+          );
+        })}
 
         {newEventPos && (
           <Marker position={[newEventPos.lat, newEventPos.lng]}>
