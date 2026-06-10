@@ -7,9 +7,11 @@ node_modules/
 .env.*.local
 
 # Build output
-dist/
 build/
+server/dist/
 .parcel-cache/
+
+# client/dist is committed — it's the pre-built React app served by Express
 
 # Runtime logs
 *.log
