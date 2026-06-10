@@ -7,7 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import EventModal from '../components/EventModal';
 import AIHelper from '../components/AIHelper';
 
-// In production VITE_API_URL points to the Render backend; empty string in dev (Vite proxy handles it)
+// axios.defaults.baseURL is set globally in main.jsx from VITE_API_URL.
+// Use it here only for the socket connection (socket.io needs an explicit host, not axios).
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 // Fix Leaflet's broken default icon paths under Vite
@@ -56,7 +57,7 @@ export default function MapPage() {
 
   const fetchEvents = async () => {
     try {
-      const { data } = await axios.get(`${API_URL}/api/events`);
+      const { data } = await axios.get('/api/events');
       setEvents(data);
     } catch (err) {
       console.error('Failed to fetch events', err);
