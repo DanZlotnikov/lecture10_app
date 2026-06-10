@@ -7,9 +7,8 @@ import { useAuth } from '../context/AuthContext';
 import EventModal from '../components/EventModal';
 import AIHelper from '../components/AIHelper';
 
-// axios.defaults.baseURL is set globally in main.jsx from VITE_API_URL.
-// Use it here only for the socket connection (socket.io needs an explicit host, not axios).
-const API_URL = import.meta.env.VITE_API_URL || '';
+// Socket connects to same origin in both dev (Vite proxy forwards /socket.io) and prod.
+const API_URL = '';
 
 // Fix Leaflet's broken default icon paths under Vite
 delete L.Icon.Default.prototype._getIconUrl;

@@ -11,8 +11,7 @@ export default function ChatRoom({ eventId, token, user }) {
   useEffect(() => {
     if (!token) return;
 
-    const socketUrl = import.meta.env.VITE_API_URL || '/';
-    const socket = io(socketUrl, { auth: { token } });
+    const socket = io('/', { auth: { token } });
     socketRef.current = socket;
 
     socket.on('connect', () => {

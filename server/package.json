@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "build": "cd ../client && npm install && npm run build && cd ../server && npm install"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
