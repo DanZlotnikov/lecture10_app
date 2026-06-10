@@ -67,15 +67,24 @@ export default function MapPage() {
     fetchEvents();
   }, []);
 
-  // Real-time: receive new events broadcast by other users
+  // Real-time: receive new events broadcast by other users.
+  // Stored in a ref so React StrictMode's double-invoke doesn't stack connections.
+  const eventSocketRef = useRef(null);
   useEffect(() => {
+    if (eventSocketRef.current) {
+      eventSocketRef.current.disconnect();
+    }
     const socketUrl = API_URL || '/';
     const socket = io(socketUrl, token ? { auth: { token } } : {});
+    eventSocketRef.current = socket;
     socket.on('new_event', (event) => {
       setEvents(prev => prev.find(e => e.id === event.id) ? prev : [...prev, event]);
       showToast(`New event: "${event.title}"`);
     });
-    return () => socket.disconnect();
+    return () => {
+      socket.disconnect();
+      eventSocketRef.current = null;
+    };
   }, [token]);
 
   const handleMapClick = (latlng) => {
