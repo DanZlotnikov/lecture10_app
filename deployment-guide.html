@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Deployment Guide — React + Node + AWS + Render</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #fff;
+      color: #1a1a1a;
+      padding: 48px 56px;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 36px 40px;
+      border-radius: 6px;
+      margin-bottom: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::after {
+      content: '';
+      position: absolute;
+      right: 0; top: 0; bottom: 0;
+      width: 14px;
+      background: linear-gradient(180deg, #f97316, #ea580c);
+    }
+    .header .label {
+      color: #f97316;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .header h1 {
+      font-size: 32px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .header p {
+      margin-top: 12px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    /* ── Steps ── */
+    .step {
+      margin-bottom: 36px;
+      page-break-inside: avoid;
+    }
+
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .step-number {
+      background: #f97316;
+      color: #fff;
+      font-size: 18px;
+      font-weight: 800;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .step-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1a1a1a;
+    }
+
+    .step-subtitle {
+      font-size: 12px;
+      font-weight: 600;
+      color: #999;
+      margin-top: 2px;
+    }
+
+    .step-body {
+      padding-left: 58px;
+    }
+
+    /* ── Parallel band ── */
+    .parallel-banner {
+      background: #1a1a1a;
+      color: #f97316;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-radius: 4px;
+      margin: 28px 0 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .parallel-banner::before,
+    .parallel-banner::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #333;
+    }
+
+    .parallel-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .parallel-col {
+      border: 2px solid #f97316;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .parallel-col-header {
+      background: #f97316;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 7px 14px;
+    }
+
+    .parallel-col-body {
+      padding: 14px;
+      background: #fff;
+    }
+
+    /* ── Substep ── */
+    .substep {
+      background: #f9f9f9;
+      border-left: 4px solid #f97316;
+      border-radius: 0 6px 6px 0;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+    }
+
+    .substep h3 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #f97316;
+      margin-bottom: 10px;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    ul li {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #333;
+      padding-left: 18px;
+      position: relative;
+    }
+
+    ul li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: #f97316;
+      font-weight: 700;
+    }
+
+    ul li strong { color: #1a1a1a; }
+
+    .parallel-col-body ul li { font-size: 13px; }
+
+    /* ── Code block ── */
+    .code {
+      background: #1a1a1a;
+      color: #f97316;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+    .code .comment { color: #555; }
+
+    /* ── Env table ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    th {
+      background: #1a1a1a;
+      color: #f97316;
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 11px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #eee;
+      color: #333;
+    }
+    tr:nth-child(even) td { background: #fafafa; }
+    td:first-child { font-family: monospace; color: #ea580c; font-weight: 600; }
+    td:last-child { color: #666; font-style: italic; }
+
+    /* ── Info / Warning box ── */
+    .warning {
+      background: #fff7ed;
+      border: 1.5px solid #f97316;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #7c2d12;
+    }
+    .warning strong { color: #ea580c; }
+
+    .info {
+      background: #f0fdf4;
+      border: 1.5px solid #22c55e;
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #14532d;
+    }
+    .info strong { color: #16a34a; }
+
+    /* ── Divider ── */
+    hr {
+      border: none;
+      border-top: 2px solid #f0f0f0;
+      margin: 36px 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 40px;
+      background: #1a1a1a;
+      color: #666;
+      font-size: 12px;
+      padding: 16px 24px;
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .footer span { color: #f97316; font-weight: 700; }
+
+    @media print {
+      body { padding: 24px 32px; }
+      .step { page-break-inside: avoid; }
+      .parallel-grid { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="label">Web Development Environments · 372.1.2402</div>
+    <h1>Full-Stack Deployment Guide</h1>
+    <p>React + Node.js + MySQL → AWS RDS + Render</p>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">1</div>
+      <div>
+        <div class="step-title">Start AWS RDS Database Creation</div>
+        <div class="step-subtitle">Takes ~5 minutes — kick it off first, then move on</div>
+      </div>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <h3>Create the instance</h3>
+        <ul>
+          <li>Go to <strong>AWS Console</strong> → search <strong>RDS</strong> → click <strong>Create database</strong></li>
+          <li>Choose: <strong>Standard create</strong> → <strong>MySQL</strong> → <strong>Free tier</strong> template</li>
+          <li>Set <strong>Master username</strong>: <code>admin</code></li>
+          <li>Set a <strong>Master password</strong> and save it somewhere</li>
+          <li>Under Connectivity → <strong>Public access: Yes</strong></li>
+          <li>Click <strong>Create database</strong> and <strong>move on to Step 2 immediately</strong> — don't wait</li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- PARALLEL SECTION -->
+  <div class="parallel-banner">While AWS creates the database (~5 min)</div>
+
+  <div class="parallel-grid">
+
+    <!-- LEFT: Build React -->
+    <div class="parallel-col">
+      <div class="parallel-col-header">Step 2A — Build &amp; Push React App</div>
+      <div class="parallel-col-body">
+        <ul>
+          <li>React JSX must be compiled before it runs in the browser</li>
+          <li>Run <strong>Parcel</strong> to compile everything into <code>client/dist/</code></li>
+        </ul>
+        <div class="code" style="font-size:12px">
+          cd client<br />
+          npm install<br />
+          npm run build<br /><br />
+          cd ..<br />
+          git add client/dist/<br />
+          git commit -m "build client"<br />
+          git push
+        </div>
+        <div class="info" style="margin-top:10px; font-size:12px">
+          <strong>What this does:</strong> Parcel reads your <code>.jsx</code> files, compiles JSX to plain JS, and bundles everything into 3 files in <code>client/dist/</code>. Express will serve these files in production.
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Create Render Service -->
+    <div class="parallel-col">
+      <div class="parallel-col-header">Step 2B — Create Render Web Service</div>
+      <div class="parallel-col-body">
+        <ul>
+          <li>Go to <strong>render.com</strong> → <strong>New</strong> → <strong>Web Service</strong></li>
+          <li>Connect your <strong>GitHub repository</strong></li>
+          <li>Set <strong>Root Directory</strong>: <code>server</code></li>
+          <li>Set <strong>Build Command</strong>: <code>npm install</code></li>
+          <li>Set <strong>Start Command</strong>: <code>node app.js</code></li>
+          <li>Add environment variables (see Step 3)</li>
+          <li>Click <strong>Deploy Web Service</strong></li>
+        </ul>
+        <div class="info" style="margin-top:10px; font-size:12px">
+          <strong>Note:</strong> You can set <code>DB_HOST</code> to a placeholder for now and update it once RDS is ready. Render lets you edit env vars and redeploy at any time.
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <hr />
+
+  <!-- STEP 3 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">3</div>
+      <div>
+        <div class="step-title">Render Environment Variables</div>
+        <div class="step-subtitle">Add these in the Render dashboard under Environment</div>
+      </div>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <h3>Required variables</h3>
+        <table>
+          <tr><th>Key</th><th>Value</th></tr>
+          <tr><td>DB_HOST</td><td>your RDS endpoint (add once available)</td></tr>
+          <tr><td>DB_USER</td><td>admin</td></tr>
+          <tr><td>DB_PASSWORD</td><td>your RDS password</td></tr>
+          <tr><td>DB_NAME</td><td>event_map</td></tr>
+          <tr><td>JWT_SECRET</td><td>any long random string</td></tr>
+          <tr><td>GEMINI_API_KEY</td><td>your Google AI Studio key</td></tr>
+          <tr><td>GEMINI_MODEL</td><td>gemini-2.5-flash</td></tr>
+        </table>
+        <div class="warning" style="margin-top:12px">
+          <strong>Never commit secrets to GitHub.</strong> Always set sensitive values through Render's environment variables panel — never in code.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- STEP 4 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">4</div>
+      <div>
+        <div class="step-title">Finish AWS Setup</div>
+        <div class="step-subtitle">Once the RDS status shows "Available"</div>
+      </div>
+    </div>
+    <div class="step-body">
+
+      <div class="substep">
+        <h3>Get the endpoint</h3>
+        <ul>
+          <li>Click on your RDS instance → <strong>Connectivity &amp; security</strong> tab</li>
+          <li>Copy the <strong>Endpoint</strong> (e.g. <code>xxx.rds.amazonaws.com</code>)</li>
+          <li>Paste it as <code>DB_HOST</code> in Render's environment variables</li>
+        </ul>
+      </div>
+
+      <div class="substep">
+        <h3>Open firewall access</h3>
+        <ul>
+          <li>In the instance page → click the <strong>Security Group</strong> link</li>
+          <li>Click <strong>Inbound rules</strong> → <strong>Edit inbound rules</strong></li>
+          <li>Add rule: Type = <strong>MySQL/Aurora</strong> · Source = <strong>Anywhere (0.0.0.0/0)</strong></li>
+          <li>Click <strong>Save rules</strong></li>
+        </ul>
+      </div>
+
+      <div class="substep">
+        <h3>Seed the database</h3>
+        <ul>
+          <li>Update <strong>server/.env</strong> with the new <code>DB_HOST</code> and <code>DB_PASSWORD</code></li>
+          <li>Run the seed script — creates all tables and mock data in one command</li>
+        </ul>
+        <div class="code">
+          cd server<br />
+          npm run seed
+        </div>
+        <div class="info">
+          <strong>Expected output:</strong> "Done. Database "event_map" recreated with all tables and mock data."<br />
+          Test accounts (password: <strong>password123</strong>): alice · bob · charlie
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- STEP 5 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">5</div>
+      <div>
+        <div class="step-title">Trigger Final Deploy</div>
+        <div class="step-subtitle">Once DB_HOST is set in Render and the database is seeded</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="substep">
+        <h3>Redeploy on Render</h3>
+        <ul>
+          <li>In Render dashboard → click <strong>Manual Deploy</strong> → <strong>Deploy latest commit</strong></li>
+          <li>Wait for the build log to show <strong>"Your service is live"</strong></li>
+          <li>Open the <code>.onrender.com</code> URL — the app is live and connected to the database</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <hr />
+
+  <!-- STEP 6 -->
+  <div class="step">
+    <div class="step-header">
+      <div class="step-number">6</div>
+      <div>
+        <div class="step-title">Update &amp; Redeploy After Changes</div>
+        <div class="step-subtitle">Every time you modify the code</div>
+      </div>
+    </div>
+    <div class="step-body">
+      <div class="substep">
+        <h3>Client (React) change</h3>
+        <ul>
+          <li>Edit files in <code>client/src/</code>, then rebuild and push</li>
+        </ul>
+        <div class="code">
+          cd client &amp;&amp; npm run build<br />
+          cd ..<br />
+          git add client/dist/<br />
+          git commit -m "rebuild client"<br />
+          git push
+        </div>
+      </div>
+      <div class="substep">
+        <h3>Server (Node.js) change</h3>
+        <ul>
+          <li>Edit files in <code>server/</code>, then push directly</li>
+        </ul>
+        <div class="code">
+          git add .<br />
+          git commit -m "update server"<br />
+          git push
+        </div>
+        <div class="info" style="margin-top:10px">
+          <strong>Render redeploys automatically</strong> on every push to the main branch. No manual action needed.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Web Development Environments</span>
+    <span>372.1.2402 · Lecture 10</span>
+  </div>
+
+</body>
+</html>
